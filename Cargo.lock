@@ -5,3 +5,10 @@ version = 3
 [[package]]
 name = "bmp_to_ascii"
 version = "0.1.0"
+dependencies = [
+ "image",
+]
+
+[[package]]
+name = "image"
+version = "0.1.0"
