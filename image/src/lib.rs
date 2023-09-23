@@ -1,10 +1,13 @@
 mod char_brightness;
 mod interpolation;
 mod tools;
-use crate::char_brightness::get_char_by_brightness_large;
+use crate::char_brightness::get_char_by_brightness;
 use crate::interpolation::{interpolate, interpolated_index};
 use crate::tools::index_as_u32;
-use std::fs::read;
+use rand::Rng;
+use std::ffi::OsStr;
+use std::fs;
+use std::process::exit;
 
 const COLORS_PER_PIXEL: usize = 3;
 #[derive(Debug, Default, Clone)]
@@ -15,8 +18,30 @@ pub struct Image {
 }
 
 impl Image {
+    pub fn demo_file() -> String {
+        let images = match fs::read_dir("./images") {
+            Ok(images) => images,
+            Err(e) => {
+                eprintln!("demo images read error: {e}");
+                exit(e.raw_os_error().unwrap_or(1))
+            }
+        };
+        let rng = rand::thread_rng().gen_range(0..5);
+        for (i, image) in images.enumerate() {
+            if rng == i {
+                return image.unwrap().path().display().to_string();
+            }
+        }
+        return "".to_string();
+    }
     pub fn new(path: &str) -> Self {
-        let file = read(path).expect("File doesn't exist");
+        let file = match fs::read(path) {
+            Ok(file) => file,
+            Err(e) => {
+                eprintln!("file read error: {e}");
+                exit(e.raw_os_error().unwrap_or(1));
+            }
+        };
         let width = index_as_u32(&file, 0x12);
         let height = index_as_u32(&file, 0x16);
         let image = Self::file_to_image(file, width, height);
@@ -54,12 +79,17 @@ impl Image {
         }
         result
     }
-    pub fn draw(&self) {
+    pub fn draw(&self, inverse: bool) {
         let mut ascii = String::new();
+        let color_mode = if !inverse {
+            get_char_by_brightness::regular
+        } else {
+            get_char_by_brightness::inverse
+        };
         for row in &self.value {
             let mut ascii_row = String::new();
             for pixel in row {
-                ascii_row += get_char_by_brightness_large(*pixel);
+                ascii_row += color_mode(*pixel);
             }
             ascii_row += "\n";
             ascii_row.push_str(&ascii);

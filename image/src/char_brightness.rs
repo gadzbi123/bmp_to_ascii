@@ -16,27 +16,33 @@ pub fn show_hierarchy() {
     }
 }
 
-#[allow(dead_code)]
-fn get_char_by_brightness_small<'a>(pixel: u8) -> &'a str {
-    match pixel {
-        pixel if pixel > 203 => "@",
-        pixel if pixel > 153 => "b",
-        pixel if pixel > 101 => "(",
-        pixel if pixel > 51 => "^",
-        _ => ".",
+pub mod get_char_by_brightness {
+    pub fn regular<'a>(pixel: u8) -> &'a str {
+        match pixel {
+            pixel if pixel > 229 => "@",
+            pixel if pixel > 203 => "&",
+            pixel if pixel > 178 => "g",
+            pixel if pixel > 153 => "b",
+            pixel if pixel > 127 => "S",
+            pixel if pixel > 101 => "(",
+            pixel if pixel > 74 => "+",
+            pixel if pixel > 51 => "^",
+            pixel if pixel > 21 => "-",
+            _ => ".",
+        }
     }
-}
-pub fn get_char_by_brightness_large<'a>(pixel: u8) -> &'a str {
-    match pixel {
-        pixel if pixel > 229 => "@",
-        pixel if pixel > 203 => "&",
-        pixel if pixel > 178 => "g",
-        pixel if pixel > 153 => "b",
-        pixel if pixel > 127 => "S",
-        pixel if pixel > 101 => "(",
-        pixel if pixel > 74 => "+",
-        pixel if pixel > 51 => "^",
-        pixel if pixel > 21 => "-",
-        _ => ".",
+    pub fn inverse<'a>(pixel: u8) -> &'a str {
+        match pixel {
+            pixel if pixel > 229 => ".",
+            pixel if pixel > 203 => "-",
+            pixel if pixel > 178 => "^",
+            pixel if pixel > 153 => "+",
+            pixel if pixel > 127 => "(",
+            pixel if pixel > 101 => "S",
+            pixel if pixel > 74 => "b",
+            pixel if pixel > 51 => "g",
+            pixel if pixel > 21 => "&",
+            _ => "@",
+        }
     }
 }
