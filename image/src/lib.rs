@@ -7,6 +7,8 @@ use crate::tools::index_as_u32;
 use rand::Rng;
 use std::ffi::OsStr;
 use std::fs;
+use std::io::Write;
+use std::path::PathBuf;
 use std::process::exit;
 
 const COLORS_PER_PIXEL: usize = 3;
@@ -18,7 +20,7 @@ pub struct Image {
 }
 
 impl Image {
-    pub fn demo_file() -> String {
+    pub fn demo_file() -> PathBuf {
         let images = match fs::read_dir("./images") {
             Ok(images) => images,
             Err(e) => {
@@ -29,12 +31,12 @@ impl Image {
         let rng = rand::thread_rng().gen_range(0..5);
         for (i, image) in images.enumerate() {
             if rng == i {
-                return image.unwrap().path().display().to_string();
+                return image.unwrap().path();
             }
         }
-        return "".to_string();
+        return PathBuf::new();
     }
-    pub fn new(path: &str) -> Self {
+    pub fn new(path: PathBuf) -> Self {
         let file = match fs::read(path) {
             Ok(file) => file,
             Err(e) => {
@@ -77,29 +79,39 @@ impl Image {
             result.push(row);
             next_row += pix_width + padding;
         }
+        result.reverse();
         result
     }
-    pub fn draw(&self, inverse: bool) {
-        let mut ascii = String::new();
+    fn to_string(&self, inverse: bool) -> String {
+        let mut result = String::new();
         let color_mode = if !inverse {
             get_char_by_brightness::regular
         } else {
             get_char_by_brightness::inverse
         };
         for row in &self.value {
-            let mut ascii_row = String::new();
+            let mut result_row = String::new();
             for pixel in row {
-                ascii_row += color_mode(*pixel);
+                result_row += color_mode(*pixel);
             }
-            ascii_row += "\n";
-            ascii_row.push_str(&ascii);
-            ascii = ascii_row;
+            result_row += "\n";
+            result += result_row.as_str();
         }
+        result
+    }
+    pub fn save(&self, path: PathBuf, inverse: bool) -> std::io::Result<()> {
+        let mut file = fs::File::create(path)?;
+        let ascii = self.to_string(inverse);
+        file.write_all(ascii.as_bytes())?;
+        Ok(())
+    }
+    pub fn draw(&self, inverse: bool) {
+        let ascii = self.to_string(inverse);
         print!("{}", ascii);
     }
     pub fn resize(&mut self, width: usize, height: usize) -> Self {
-        let mut image_new = vec![vec![0_u8; width]; height];
-        for (j, row) in image_new.iter_mut().enumerate() {
+        let mut value = vec![vec![0_u8; width]; height];
+        for (j, row) in value.iter_mut().enumerate() {
             let j_interpolated = interpolated_index(j, self.height, height);
             for (i, value) in row.iter_mut().enumerate() {
                 let i_interpolated = interpolated_index(i, self.width, width);
@@ -113,20 +125,9 @@ impl Image {
             }
         }
         Self {
-            value: image_new,
+            value,
             width,
             height,
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
     }
 }
